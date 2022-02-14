@@ -1,0 +1,84 @@
+ENV TZ=Asia/Shanghai
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+sywang8787/Gugg8787! shiyou_wang shiyou.wang@happyeasygo.com
+
+/tmp/jenkins-buildenv/${JOB_NAME}/workspace
+
+https://github.com/turnbullpress/docker-jenkins-sample.git
+
+IMAGE=$(docker build . | tail -l | awk '{ print $NF }')
+MNT="$WORKSPACE/.."
+CONTAINER=$(docker run -d -v "$MNT:/opt/project" $IMAGE /bin/bash -c 'cd /opt/project/workspace && rake spec')
+docker attach $CONTAINER
+RC=$(docker wait $CONTAINER)
+docker rm $CONTAINER
+exit $RC
+
+> -v /var/run/docker.sock:/var/run/docker.sock \
+> -v /usr/bin/docker:/usr/bin/docker \
+
+docker start  -v  /mnt/f/dockerspace:/tmp/jenkins-buildenv/ jenkins2 --privileged  
+
+docker run -d --name myspec -v /home/sywang6/..:/opt/project fa6f384ae306 /bin/bash -c cd /opt/project/workspace && rake spec
+
+
+
+$ docker run -v /opt/test/data --name container-a test
+$ docker run --volumes-from container-a test-prod:latest
+
+http://mirrors.jenkins-ci.org/plugins/
+
+systemd-sysv
+
+service docker start
+
+
+Docker_test_job
+/tmp/jenkins-buildenv/${JOB_NAME}/workspace
+
+https://github.com/turnbullpress/docker-jenkins-sample.git
+
+docker build -t sywang8787/spec . 
+IMAGE=$(docker images --filter=reference=sywang8787/spec --format "{{.ID}}")
+MNT="$WORKSPACE/.."
+docker run -dit -v "$MNT:/opt/project" $IMAGE /bin/bash -c 'cat'
+#CONTAINER=$(docker run -d -v "$MNT:/opt/project" $IMAGE /bin/bash -c 'cd /opt/project/workspace')
+#docker attach $CONTAINER
+#RC=$(docker wait $CONTAINER)
+#docker rm $CONTAINER
+#exit $RC
+
+
+docker build -t sywang8787/spec . 
+IMAGE=$(docker images --filter=reference=sywang8787/spec --format "{{.ID}}")
+MNT="$WORKSPACE/.."
+#docker run -dit -v "$MNT:/opt/project" $IMAGE /bin/bash -c 'cat'
+CONTAINER=$(docker run -d -v "$MNT:/opt/project" $IMAGE /bin/bash -c 'cd /opt/project/workspace')
+#docker attach $CONTAINER
+#RC=$(docker wait $CONTAINER)
+#docker rm $CONTAINER
+#exit $RC
+
+
+java -jar jenkins-cli.jar -s http://127.0.0.1:8080/  -auth sywang8787:Gugg8787!  install-plugin matrix-project:1.19 -deploy -restart
+
+踩坑记录:
+基于docker容器的redis集群
+1. protected-mode默认为开,按照书本操作,向redis中添加key的时候会报(error) DENIED Redis is running in protected mode because protected mode is enabled.
+解决办法,使用外置配置文件,并修改protected-mode为关
+2.redis绑定了ip地址127.0.0.1,在docker容器中用主机名访问的时候报连接拒绝,解决方法注释掉外置配置文件的配置项bind 127.0.0.1
+
+如何一探容器内部的情况
+容器可以只有一个进程也可以有多个进程,那我们怎样一探容器内部的情况呢?
+在第3章的3.6小节,作者介绍了docker attach命令,attach命令可以附着到一个容器上,如果容器是以前台方式运行的,attach上去看到的就是容器运行的进程,
+如果容器是以后台方式运行的可能啥都看不到,当退出attach时,attach的容器也会停止运行,总的来说这个命令不是特别有用.举个例子:
+运行一个redis容器: docker run -d --name redis-d redis
+attach到这个容器上: docker attach redis-d,你什么操作也做不了
+第6章的6.4小节,又为我们介绍了docker exec命令,使用docker exec命令就可以很方便的进入到容器内部了,不管这个容器是以后台方式运行的还是前台
+方式运行的,简直是个神器,当然我们还有一些其他的方法,可以使用共享卷的方法.简单来说就是A容器挂载一个卷a,B容器使用--volumes-from A来共享
+A容器的卷a,可以将卷a输出,具体可以参考第6章的6.3.7 捕获应用日志
+其实在阅读本书的时候,我早在第6章之前就发现的docker exec命令,哈哈
+
+
+

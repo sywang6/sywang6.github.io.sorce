@@ -1,0 +1,75 @@
+增:
+set(ThreadLocal<?> key, Object value)
+新增是一个比较复杂的过程:
+1.计算出key的初始hash槽位
+2.如果槽位上没有元素,直接把新增元素放进去就好了
+3.如果槽位上已经有元素了,且元素没过期,且已有元素的key和新添加元素的key相等, 更新一下value就可以
+4.如果槽位上已经有元素了,且元素没过期,且已有元素的key和新添加元素的key不相等, 变量下一个槽位
+5.如果槽位上已经有元素了,且元素已经过期了,这种情况处理起来特别复杂,
+能不能直接把新添加额元素放到这个key过期的槽位上?答案是否定的.举个例子:有三个元素2-v1,4-v2,6-v3,hash槽值为key/2,
+由于发送hash冲突,所以这三个元素在数组的位置分别为index1,index2,index3.由于某种原因index2元素的key过期,但是元素还在.
+这是在执行 set(6,v4).6的初始位置为index1,index1还有元素且没有过期,所以遍历下一个位置index2,index2元素过期了,
+但是不能直接把新添加的元素放在这个位置,因为key为6的元素在index3位置上已经存在了,那怎么解决呢?replaceStaleEntry方法就是处理这个事情的
+6.新增完成后在做一次启发式的清理(i,size),如果这时元素个数还大于阈值,则需要进行rehash
+
+
+
+replaceStaleEntry(ThreadLocal<?> key, Object value,int staleSlot)
+staleSlot槽位上的元素肯定是过期的.
+1.查找staleSlot槽位之前(遇到空槽位即停止)还有没有过期的元素,如有记录下来这个过期槽位的值slotToExpunge(slotToExpunge有可能等于staleSlot)
+
+2.从staleSlot槽位向后查找(不包括staleSlot槽位),看看新添加的元素以前有没有被添加过,如果添加过了用新值替换
+1)槽位i不为空,且槽位i元素没过期,且槽位i元素的key和新添加的key相等,显然槽位i在存放key元素就不是特别合适了,因为在i以前已经出现了过期的槽位staleSlot
+所有把新添加的元素放到staleSlot槽位上, 槽位放i已过期的元素(原staleSlot槽位的元素).下一步就是要不要推进slotToExpunge,如果staleSlot之前都没有过期元素,
+则可以推进slotToExpunge到i,否则slotToExpunge保存不变.做完清理后,就可以直接返回了.cleanSomeSlots(expungeStaleEntry(slotToExpunge), len)
+
+2)槽位i不为空,且槽位i元素没过期,且槽位i元素的key和新添加的key不相等,直接查找下一个槽位
+
+3)槽位i不为空,且槽位i元素过期了, 考虑要不要推进slotToExpunge,staleSlot之前都没有过期元素,则可以推进slotToExpunge到i,否则slotToExpunge保存不变(最多只能推进一次)
+
+3.找了一圈,新添加的元素以前没添加过,直接把新添加的元素放到staleSlot槽位上就可以了.做完清理后,就可以直接返回了.cleanSomeSlots(expungeStaleEntry(slotToExpunge), len)
+
+
+rehash:
+ThreadLocalMap的rehash 相对来说比较简单,首先清除所有过期元素.然后把new一个table为原来的两倍,遍历老表的元素,重新计算在新表的槽位,放到对应的位置
+
+
+
+
+查:
+Entry getEntry(ThreadLocal<?> key)
+先到key对应的hash槽位上去找:
+	1.找到了(输入参数的key==槽位上entry的key),直接返回
+    2.槽位上entry的key为空(过期元素),删除该位置上过期元素(连续段的清理)
+	3.没找到,槽位上的entry不为null.依次查找下一个槽位,直到下一个槽位的entry为null
+	
+
+
+
+
+	
+删除指定位置过期元素(其实会向后遍历)-连续段清理:int expungeStaleEntry(int staleSlot)
+1.输入参数的槽位的entry肯定是过期的,直接删除,map的size--
+2.依次查找下一个槽位,直到下一个槽位的entry为,null
+	3.下一个槽位entry过期了(entry的key为null),直接删除过期的entry,map的size--
+	4.下一个槽位的entry没过期,给下一个槽位的entry找一个比较合适的位置. 怎样才算比较合适的位置呢?首先
+	   与自己的hashcode匹配的槽位肯定是最好的(查找的时候一下子就能找到),如果最匹配的位置上已经有元素了,
+	   那么就退而求其次,从最匹配的位置依次向后查找,直到找到一个位空的位置
+
+
+删除一定范围内的过期元素-启发式清理:cleanSomeSlots(int i, int n)
+i:已知该位置的元素没有过期,从下一个位置开始遍历
+n:并不是遍历n个元素,考虑到可能遍历的元素太多了,遍历元素的个数为log2(n),步长为n>>>1
+删除具体位置的元素还是调用expungeStaleEntry(int staleSlot)
+	   
+	   
+按照key删除元素:remove(ThreadLocal<?> key):
+这个方法相对比较简单, key对应的hash槽位上元素的key是不是与传进来的key相等,
+是:调用expungeStaleEntry删除该位置上的元素
+不是:遍历下一个位置,直到下一个位置的元素为空
+
+
+
+
+删除所有过期元素:expungeStaleEntries()
+从0到map的容量,挨个遍历,如果过期调用int expungeStaleEntry(int staleSlot)删除

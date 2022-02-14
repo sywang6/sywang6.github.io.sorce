@@ -1,0 +1,53 @@
+observability 3 ways  三种方式观察程序运行情况
+logging,metrics and tracing
+==========================================================
+
+unifying theory  统一的理论
+Every is based on events
+logging- recording events 记录事件
+metrics- data combined from  measuring events   从测量事件组合数据
+tracing- recording events with causal ordering  按因果顺序记录事件
+
+data combined from  measuring events put more specilically:metrics  "statistical统计 aggregates聚合 of properties of events 
+聚合统计事件的属性,什么事件呢,周期产生的记录聚合体的瞬时值
+which generate periodic events recording the instantaneous values of those aggregates"
+==========================================================
+
+often confused because they have thing in commom ,like a time line 经常使我们困惑,因为他们有相同点,比如说时间线
+start with logging: crappy error happened  糟糕的错误发生了
+tracing: impact of that error 错误的影响
+metrics: how many errors of this type are happending in the system   某一类型的错误在系统里面发生了多少次
+
+logs: discrete events:debug ,error,audit,request details 
+crappy error happened
+
+tracing can tell you the impact of that error for example did it cause a caller to fail or did it delay it?
+tracing:request-scope causal info:latency,queries,IDs
+
+metrics:guage counter histogram;success failure or customer
+how many errors of this type are happending in this cluster?
+not all metrics are meaningfully aggregatable,ex percentiles or averages 并不是所有的指标都是聚合
+
+https://peter.bourgon.org/blog/2017/02/21/metrics-tracing-and-logging.html
+
+==========================================================
+
+
+Let's use latency to compare a few tools
+Log-envent(response time)
+Metric-value(response time)
+Trace-tree(response time)
+
+event value and tree are outputs fo 输出 each corresponding 相应的 system
+
+==========================================================
+Logs show response time 
+
+[20/Apr/2017:14:19:07] "GET /HTTP/1.1" 200 7918"""Mozilla/5.0(X11:U:Linuxi686;en-US;rv:1.8.1.11)
+Gecko/20061201 Firefox/2.0.0.11(Ubuntu-feisty)"**0/95491**
+
+Look!this request took 95 milliseconds!
+
+often a field or other to derive duration from logs
+note there's complexity in this format,and often latency is timestamp math between events
+

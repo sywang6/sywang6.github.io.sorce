@@ -1,0 +1,16 @@
+log4j-api：log4j2定义的API
+
+log4j-core：log4j2上述API的实现
+
+log4j-1.2-api：将log4j日志转接到log4j2的转接包
+
+log4j-jcl：commons-logging到log4j2的桥梁
+
+log4j-jul：java util logging 到log4j2的桥梁
+
+log4j-web：  保证容器关闭或取消部署Web应用程序时，正确清理日志资源（关闭数据库连接，关闭文件等）
+
+log4j-slf4j-impl：slf4j绑定log4j2的实现
+
+log4j-to-slf4j-2.x.jar: log4j2到slf4j的适配,不能与log4j-slf4j-impl同时出现.log4j-to-slf4j的作用是log4j2转到slf4j,而log4j-slf4j-impl
+的作用是slf4j绑定log4j2的实现,同时出现不就死循环了吗?
